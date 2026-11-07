@@ -1,0 +1,48 @@
+name: Build iOS
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: Archivo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Adaptar formato del proyecto
+        run: sed -i '' 's/objectVersion = 110;/objectVersion = 77;/' 2026.xcodeproj/project.pbxproj
+
+      - name: Compilar para simulador
+        run: |
+          xcodebuild build \
+            -project 2026.xcodeproj \
+            -scheme 2026 \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            IPHONEOS_DEPLOYMENT_TARGET=17.0 \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Empaquetar la app
+        run: |
+          cd build/Build/Products/Debug-iphonesimulator
+          zip -r "$GITHUB_WORKSPACE/app.zip" 2026.app
+
+      - name: Abrir en simulador y sacar captura
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE '[0-9A-F-]{36}')
+          xcrun simctl boot "$UDID"
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/2026.app
+          xcrun simctl launch "$UDID" Acatlan.-026
+          sleep 8
+          xcrun simctl io "$UDID" screenshot "$GITHUB_WORKSPACE/captura.png"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resultado
+          path: |
+            app.zip
+            captura.png
