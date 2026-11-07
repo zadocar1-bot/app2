@@ -8,7 +8,7 @@ jobs:
     runs-on: macos-latest
     defaults:
       run:
-        working-directory: Archivo
+        working-directory: Archivo_corregido
     steps:
       - uses: actions/checkout@v4
 
